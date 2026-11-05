@@ -26,3 +26,5 @@ Os dados são armazenados localmente no navegador para facilitar a demonstraçã
 
 ## Observação
 Esta é uma implementação acadêmica simples para a 1ª iteração. Não utiliza servidor ou banco de dados remoto.
+ 
+Branch iteracao2: modificacao de exercicio. 
