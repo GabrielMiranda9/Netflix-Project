@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Netflix Project</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#111;color:#fff}
+header{background:#000;padding:18px 5%;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #333}
+.logo{font-size:24px;font-weight:bold;color:#e50914}.nav button{margin-left:8px}
+main{max-width:1100px;margin:0 auto;padding:30px 20px}.hidden{display:none}
+button{background:#e50914;color:#fff;border:0;border-radius:5px;padding:11px 16px;cursor:pointer;font-weight:bold}
+button.secondary{background:#333}button:hover{opacity:.88}
+.card{background:#1b1b1b;border-radius:10px;padding:22px;margin-bottom:20px}
+input,textarea,select{width:100%;padding:12px;margin:7px 0 14px;border-radius:5px;border:1px solid #555;background:#222;color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px}
+.movie{background:#1d1d1d;border-radius:9px;padding:18px;border:1px solid #333}
+.movie h3{margin-top:0}.tag{display:inline-block;background:#333;padding:5px 8px;border-radius:4px;font-size:12px;margin-bottom:8px}
+.msg{padding:10px;background:#252525;border-radius:5px;margin:10px 0}.success{border-left:4px solid #32cd32}.error{border-left:4px solid #e50914}
+.rating{font-size:24px;letter-spacing:3px;color:#f5c518}.top{display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:12px;border-bottom:1px solid #333}
+.hero{padding:30px;background:linear-gradient(120deg,#222,#111);border-radius:12px;margin-bottom:25px}
+.small{color:#aaa;font-size:14px}.actions{display:flex;gap:8px;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<header>
+<div class="logo">NETFLIX PROJECT</div>
+<div class="nav">
+<button id="homeBtn" class="secondary">Início</button>
+<button id="favBtn" class="secondary">Favoritos</button>
+<button id="adminBtn" class="secondary">Admin</button>
+<button id="logoutBtn" class="secondary">Sair</button>
+</div>
+</header>
+
+<main>
+<section id="auth">
+<div class="hero">
+<h1>Catálogo de filmes e séries</h1>
+<p class="small">Sistema acadêmico para pesquisa, avaliações e favoritos.</p>
+</div>
+<div class="grid">
+<div class="card">
+<h2>Entrar</h2>
+<form id="loginForm">
+<label>E-mail</label><input id="loginEmail" type="email" required>
+<label>Senha</label><input id="loginPassword" type="password" required>
+<button type="submit">Entrar</button>
+</form>
+<div id="loginMsg"></div>
+<p class="small">Teste: admin@netflix.com / 1234</p>
+</div>
+<div class="card">
+<h2>Criar conta</h2>
+<form id="registerForm">
+<label>Nome</label><input id="regName" required>
+<label>E-mail</label><input id="regEmail" type="email" required>
+<label>Senha</label><input id="regPassword" type="password" required>
+<button type="submit">Cadastrar</button>
+</form>
+<div id="registerMsg"></div>
+</div>
+</div>
+</section>
+
+<section id="home" class="hidden">
+<div class="hero">
+<div class="top"><div><h1>Pesquisar filmes e séries</h1><p class="small">Encontre títulos e consulte suas avaliações.</p></div></div>
+<input id="search" placeholder="Digite o nome do título...">
+<div id="results" class="grid"></div>
+</div>
+</section>
+
+<section id="details" class="hidden">
+<div class="card" id="detailsContent"></div>
+</section>
+
+<section id="favorites" class="hidden">
+<div class="card"><h2>Meus favoritos</h2><div id="favoriteList" class="grid"></div></div>
+</section>
+
+<section id="admin" class="hidden">
+<div class="card">
+<h2>Área Administrativa</h2>
+<p class="small">Gerenciamento simplificado de usuários e conteúdos.</p>
+<h3>Usuários cadastrados</h3>
+<div id="usersTable"></div>
+<h3>Conteúdos</h3>
+<div id="adminMovies" class="grid"></div>
+</div>
+</section>
+</main>
+
+<script>
+const defaultMovies=[
+{id:1,title:"A Origem",type:"Filme",year:2010,synopsis:"Um especialista em sonhos participa de uma missão para inserir uma ideia na mente de uma pessoa.",rating:5},
+{id:2,title:"Stranger Things",type:"Série",year:2016,synopsis:"Um grupo de jovens investiga acontecimentos misteriosos envolvendo sua cidade.",rating:4},
+{id:3,title:"Interestelar",type:"Filme",year:2014,synopsis:"Uma equipe viaja pelo espaço em busca de novas possibilidades para a humanidade.",rating:5},
+{id:4,title:"The Last of Us",type:"Série",year:2023,synopsis:"Uma jornada atravessa um mundo transformado por uma ameaça global.",rating:4},
+{id:5,title:"Batman",type:"Filme",year:2022,synopsis:"Um investigador enfrenta crimes e mistérios em Gotham.",rating:4},
+{id:6,title:"Breaking Bad",type:"Série",year:2008,synopsis:"Um professor de química passa a produzir uma substância ilegal.",rating:5}
+];
+
+let users=JSON.parse(localStorage.getItem("np_users")||"null")||[
+{name:"Administrador",email:"admin@netflix.com",password:"1234",admin:true},
+{name:"Usuário Demo",email:"user@netflix.com",password:"1234",admin:false}
+];
+let movies=JSON.parse(localStorage.getItem("np_movies")||"null")||defaultMovies;
+let reviews=JSON.parse(localStorage.getItem("np_reviews")||"{}");
+let favorites=JSON.parse(localStorage.getItem("np_favorites")||"{}");
+let current=JSON.parse(localStorage.getItem("np_current")||"null");
+
+function save(){localStorage.setItem("np_users",JSON.stringify(users));localStorage.setItem("np_movies",JSON.stringify(movies));localStorage.setItem("np_reviews",JSON.stringify(reviews));localStorage.setItem("np_favorites",JSON.stringify(favorites));localStorage.setItem("np_current",JSON.stringify(current))}
+function el(id){return document.getElementById(id)}
+function show(id){["auth","home","details","favorites","admin"].forEach(x=>el(x).classList.add("hidden"));el(id).classList.remove("hidden")}
+function msg(id,text,ok=true){el(id).innerHTML='<div class="msg '+(ok?"success":"error")+'">'+text+"</div>"}
+function stars(n){return "★".repeat(n)+"☆".repeat(5-n)}
+function requireLogin(){if(!current){show("auth");msg("loginMsg","Faça login para acessar essa função.",false);return false}return true}
+
+function renderResults(){
+ const q=(el("search").value||"").toLowerCase();
+ const list=movies.filter(m=>(m.title+" "+m.type).toLowerCase().includes(q));
+ el("results").innerHTML=list.map(m=>movieCard(m)).join("")||"<p>Nenhum resultado encontrado.</p>";
+}
+function movieCard(m){
+ return `<div class="movie"><span class="tag">${m.type}</span><h3>${m.title}</h3><p class="small">${m.year}</p><div class="rating">${stars(m.rating)}</div><p>${m.synopsis}</p><div class="actions"><button onclick="openDetails(${m.id})">Ver detalhes</button><button class="secondary" onclick="toggleFavorite(${m.id})">${isFavorite(m.id)?"Remover favorito":"Favoritar"}</button></div></div>`;
+}
+function isFavorite(id){return current && (favorites[current.email]||[]).includes(id)}
+function openDetails(id){
+ if(!requireLogin())return;
+ const m=movies.find(x=>x.id===id); const rs=reviews[id]||[];
+ el("detailsContent").innerHTML=`<button class="secondary" onclick="show('home')">← Voltar</button><h1>${m.title}</h1><span class="tag">${m.type} • ${m.year}</span><p>${m.synopsis}</p><div class="rating">${stars(m.rating)}</div><p><button onclick="toggleFavorite(${m.id})">${isFavorite(m.id)?"Remover dos favoritos":"Adicionar aos favoritos"}</button></p>
+ <hr><h2>Avaliações</h2>${rs.length?rs.map(r=>`<div class="msg"><b>${r.user}</b> — ${r.note}/5<br>${r.comment}</div>`).join(""):"<p class='small'>Ainda não há avaliações.</p>"}
+ <h3>Sua avaliação</h3><select id="note"><option value="5">5 - Excelente</option><option value="4">4 - Muito bom</option><option value="3">3 - Bom</option><option value="2">2 - Regular</option><option value="1">1 - Ruim</option></select><textarea id="comment" placeholder="Escreva sua avaliação..."></textarea><button onclick="addReview(${m.id})">Enviar avaliação</button>`;
+ show("details");
+}
+function addReview(id){
+ const note=Number(el("note").value),comment=el("comment").value.trim();
+ if(!comment){alert("Digite um comentário.");return}
+ reviews[id]=reviews[id]||[];reviews[id].push({user:current.name,note,comment});save();openDetails(id);
+}
+function toggleFavorite(id){
+ if(!requireLogin())return;
+ favorites[current.email]=favorites[current.email]||[];
+ const a=favorites[current.email],i=a.indexOf(id);i>=0?a.splice(i,1):a.push(id);save();
+ if(!el("details").classList.contains("hidden"))openDetails(id);else renderResults();
+}
+function renderFavorites(){
+ if(!requireLogin())return;
+ const list=(favorites[current.email]||[]).map(id=>movies.find(m=>m.id===id)).filter(Boolean);
+ el("favoriteList").innerHTML=list.length?list.map(movieCard).join(""):"<p>Você ainda não adicionou títulos aos favoritos.</p>";
+ show("favorites");
+}
+function renderAdmin(){
+ if(!current||!current.admin){alert("Acesso restrito ao administrador.");return}
+ el("usersTable").innerHTML=`<table><tr><th>Nome</th><th>E-mail</th><th>Perfil</th></tr>${users.map(u=>`<tr><td>${u.name}</td><td>${u.email}</td><td>${u.admin?"Administrador":"Usuário"}</td></tr>`).join("")}</table>`;
+ el("adminMovies").innerHTML=movies.map(m=>`<div class="movie"><span class="tag">${m.type}</span><h3>${m.title}</h3><p>${m.year}</p><button class="secondary" onclick="deleteMovie(${m.id})">Excluir conteúdo</button></div>`).join("");
+ show("admin");
+}
+function deleteMovie(id){movies=movies.filter(m=>m.id!==id);save();renderAdmin()}
+function login(e){
+ e.preventDefault();const email=el("loginEmail").value.trim().toLowerCase(),pass=el("loginPassword").value;
+ const u=users.find(x=>x.email.toLowerCase()===email&&x.password===pass);
+ if(!u){msg("loginMsg","E-mail ou senha inválidos.",false);return}
+ current=u;save();el("logoutBtn").style.display="inline-block";show("home");renderResults();
+}
+function register(e){
+ e.preventDefault();const name=el("regName").value.trim(),email=el("regEmail").value.trim().toLowerCase(),password=el("regPassword").value;
+ if(users.some(u=>u.email.toLowerCase()===email)){msg("registerMsg","Este e-mail já está cadastrado.",false);return}
+ users.push({name,email,password,admin:false});save();msg("registerMsg","Cadastro realizado. Agora faça login.");el("registerForm").reset();
+}
+function logout(){current=null;save();show("auth");el("loginForm").reset()}
+el("loginForm").addEventListener("submit",login);el("registerForm").addEventListener("submit",register);
+el("search").addEventListener("input",renderResults);el("homeBtn").addEventListener("click",()=>{if(requireLogin()){show("home");renderResults()}});
+el("favBtn").addEventListener("click",renderFavorites);el("adminBtn").addEventListener("click",renderAdmin);el("logoutBtn").addEventListener("click",logout);
+if(current){show("home");renderResults()}else{show("auth");el("logoutBtn").style.display="none"}
+</script>
+</body>
+</html>
